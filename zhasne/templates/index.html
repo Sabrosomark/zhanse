@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sensor Monitoring</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        h2 {
+            text-align: center;
+            margin: 10px 0;
+            font-size: 18px; /* Reduce font size for better fit */
+        }
+        #chartContainer {
+            display: flex;
+            flex-direction: column; /* Stack charts vertically */
+            align-items: center;
+            gap: 10px; /* Minimize space between charts */
+            height: 70vh; /* Adjust to fit within one frame */
+            justify-content: space-evenly; /* Distribute charts evenly */
+        }
+        canvas {
+            max-width: 80%; /* Ensure charts are responsive */
+            height: 30%; /* Adjust chart height to fit all charts */
+        }
+    </style>
+</head>
+<body>
+    <h2>Sensor Monitoring Dashboard</h2>
+    <div id="chartContainer">
+        <canvas id="tdsChart"></canvas>
+        <canvas id="distanceChart"></canvas>
+    </div>
+    <script>
+        const tdsCtx = document.getElementById('tdsChart').getContext('2d');
+        const distanceCtx = document.getElementById('distanceChart').getContext('2d');
+
+        const tdsChart = new Chart(tdsCtx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [
+                    {
+                        label: 'TDS (Raw)',
+                        data: [],
+                        borderColor: 'rgba(54, 162, 235, 0.5)',
+                        borderWidth: 2,
+                        fill: false,
+                    },
+                    {
+                        label: 'TDS (Filtered)',
+                        data: [],
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        borderWidth: 2,
+                        fill: false,
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        title: { display: true, text: 'Time' }
+                    },
+                    y: {
+                        title: { display: true, text: 'TDS (ppm)' }
+                    }
+                }
+            }
+        });
+
+        const distanceChart = new Chart(distanceCtx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [
+                    {
+                        label: 'Distance (Raw)',
+                        data: [],
+                        borderColor: 'rgba(75, 192, 192, 0.5)',
+                        borderWidth: 2,
+                        fill: false,
+                    },
+                    {
+                        label: 'Distance (Filtered)',
+                        data: [],
+                        borderColor: 'rgba(255, 159, 64, 1)',
+                        borderWidth: 2,
+                        fill: false,
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        title: { display: true, text: 'Time' }
+                    },
+                    y: {
+                        title: { display: true, text: 'Distance (cm)' }
+                    }
+                }
+            }
+        });
+
+        async function fetchData() {
+            try {
+                const response = await fetch('/data');
+                const data = await response.json();
+
+                if (data.distance && data.tds) {
+                    const currentTime = new Date().toLocaleTimeString();
+
+                    // Update TDS chart
+                    tdsChart.data.labels.push(currentTime);
+                    tdsChart.data.datasets[0].data.push(data.tds.raw);
+                    tdsChart.data.datasets[1].data.push(data.tds.filtered);
+                    tdsChart.update();
+
+                    // Update Distance chart
+                    distanceChart.data.labels.push(currentTime);
+                    distanceChart.data.datasets[0].data.push(data.distance.raw);
+                    distanceChart.data.datasets[1].data.push(data.distance.filtered);
+                    distanceChart.update();
+                }
+            } catch (error) {
+                console.error('Error fetching data:', error);
+            }
+        }
+
+        setInterval(fetchData, 1000); // Fetch data every second
+    </script>
+</body>
+</html>
